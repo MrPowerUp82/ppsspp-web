@@ -47,11 +47,23 @@ extern "C" EMSCRIPTEN_KEEPALIVE int PPSSPP_BootGame() {
 def patch_wasm_source(wasm_src: Path) -> None:
     native_app = wasm_src / "UI" / "NativeApp.cpp"
     text = native_app.read_text(encoding="utf-8")
-    if "PPSSPP_BootGame" in text:
-        return
-    anchor = "AudioBackend *g_audioBackend = nullptr;\n"
-    text = require_replace(text, anchor, WASM_BOOT_EXPORTS + anchor, "ppsspp-wasm UI/NativeApp.cpp")
-    native_app.write_text(text, encoding="utf-8")
+    if "PPSSPP_BootGame" not in text:
+        anchor = "AudioBackend *g_audioBackend = nullptr;\n"
+        text = require_replace(text, anchor, WASM_BOOT_EXPORTS + anchor, "ppsspp-wasm UI/NativeApp.cpp")
+        native_app.write_text(text, encoding="utf-8")
+
+    # Keep function names in the release .wasm so crash stacks read "$Memory::Read_U32"
+    # instead of "$func4321". Costs some download size, no runtime cost.
+    cmake_lists = wasm_src / "CMakeLists.txt"
+    cmake = cmake_lists.read_text(encoding="utf-8")
+    if "--profiling-funcs" not in cmake:
+        cmake = require_replace(
+            cmake,
+            'add_link_options("-sASSERTIONS=0")',
+            'add_link_options("-sASSERTIONS=0")\n\t\tadd_link_options("--profiling-funcs")',
+            "ppsspp-wasm CMakeLists.txt",
+        )
+        cmake_lists.write_text(cmake, encoding="utf-8")
 
 
 def main() -> None:
