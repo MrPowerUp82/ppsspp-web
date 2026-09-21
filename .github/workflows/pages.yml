@@ -1,0 +1,109 @@
+name: Build Arcana Survivors PSP web portfolio
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  GAME_FILE: arcana-survivors-v0.6.0-psp.cso
+  GAME_URL: https://github.com/MrPowerUp82/wizard-coop-ports/releases/download/v0.6.0/arcana-survivors-v0.6.0-psp.cso
+  GAME_SHA256: a1a3018d83d0214fa08c3225dde5121a6194c66dfdaa8da871e92645223b4081
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: emscripten/emsdk:5.0.7
+
+    steps:
+      - name: Checkout portfolio customization
+        uses: actions/checkout@v6
+        with:
+          path: custom
+          fetch-depth: 1
+
+      - name: Checkout PPSSPP Web shell
+        uses: actions/checkout@v6
+        with:
+          repository: root-hunter/ppsspp-web
+          ref: wasm
+          path: upstream
+          fetch-depth: 1
+
+      - name: Checkout PPSSPP WASM
+        uses: actions/checkout@v6
+        with:
+          repository: root-hunter/ppsspp-wasm
+          ref: wasm
+          path: ppsspp-wasm-src
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Configure Git safe directories
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/custom"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/upstream"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE/ppsspp-wasm-src"
+
+      - name: Install build tools
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ninja-build ca-certificates python3 curl
+
+      - name: Download Arcana Survivors PSP release
+        run: |
+          mkdir -p custom/game
+          curl --fail --location --retry 3 --retry-delay 2 \
+            --output "custom/game/$GAME_FILE" \
+            "$GAME_URL"
+          echo "$GAME_SHA256  custom/game/$GAME_FILE" | sha256sum --check --strict -
+          ls -lh "custom/game/$GAME_FILE"
+
+      - name: Apply portfolio customization
+        run: python3 custom/customization/patch_upstream.py upstream custom
+
+      - name: Build PPSSPP WebAssembly
+        working-directory: upstream
+        run: make wasm-release WASM_ROOT=../ppsspp-wasm-src CMAKE=/usr/bin/cmake WASM_JOBS="-j$(nproc)"
+
+      - name: Install Angular dependencies
+        working-directory: upstream
+        run: npm --prefix wasm-page ci
+
+      - name: Build static GitHub Pages bundle
+        working-directory: upstream
+        run: make app-build-pages WASM_ROOT=../ppsspp-wasm-src
+
+      - name: Verify game is in Pages bundle
+        run: |
+          test -f "upstream/wasm-page/dist/ppsspp-web/game/$GAME_FILE"
+          echo "$GAME_SHA256  upstream/wasm-page/dist/ppsspp-web/game/$GAME_FILE" | sha256sum --check --strict -
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: upstream/wasm-page/dist/ppsspp-web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5

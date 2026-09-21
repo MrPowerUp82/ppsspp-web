@@ -1,0 +1,138 @@
+/* Portfolio skin layered on top of PPSSPP Web. */
+:root {
+  --portfolio-accent: #8b5cf6;
+  --portfolio-accent-2: #22d3ee;
+}
+
+body:not(.emulator-started) header {
+  background: rgba(8, 10, 16, .72);
+  border-bottom-color: rgba(255,255,255,.08);
+  backdrop-filter: blur(18px);
+}
+
+body:not(.emulator-started) #launchGroup,
+body:not(.emulator-started) #gpuSelectWrap,
+body:not(.emulator-started) .gpu-sep,
+body:not(.emulator-started) #gamepadBadge,
+body:not(.emulator-started) #gpuBadge,
+body:not(.emulator-started) #driveBadge,
+body:not(.emulator-started) .top-official-link,
+body:not(.emulator-started) #panelToggleBtn,
+body:not(.emulator-started) #stageMini,
+body:not(.emulator-started) #fpsBadge {
+  display: none !important;
+}
+
+body:not(.emulator-started) .hbar-end {
+  margin-left: auto;
+}
+
+#idleOverlay {
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--portfolio-accent) 34%, transparent), transparent 30%),
+    radial-gradient(circle at 83% 78%, color-mix(in srgb, var(--portfolio-accent-2) 24%, transparent), transparent 31%),
+    linear-gradient(145deg, #060711 0%, #111427 52%, #05060a 100%);
+}
+
+#idleOverlay::before {
+  background:
+    linear-gradient(115deg, transparent 0 42%, rgba(255,255,255,.055) 43% 44%, transparent 45% 100%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.02) 0 1px, transparent 1px 74px);
+}
+
+.idle-kicker {
+  color: #c4b5fd;
+}
+
+.idle-kicker::before {
+  background: var(--portfolio-accent);
+  box-shadow: 0 0 16px var(--portfolio-accent);
+}
+
+.idle-title {
+  max-width: 13ch;
+  background: linear-gradient(95deg, #fff, #ddd6fe 50%, #a5f3fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+#portfolioMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.portfolio-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(255,255,255,.11);
+  border-radius: 999px;
+  background: rgba(255,255,255,.045);
+  color: #b9c5d1;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+#portfolioPlayBtn {
+  grid-column: 1 / -1;
+  height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(100deg, var(--portfolio-accent), var(--portfolio-accent-2));
+  color: white;
+  font-weight: 850;
+  box-shadow: 0 12px 34px rgba(91, 33, 182, .22);
+}
+
+#portfolioPlayBtn:disabled {
+  opacity: .66;
+}
+
+#idleStartBtn {
+  display: none !important;
+}
+
+#portfolioProjectLink {
+  background: rgba(255,255,255,.055);
+}
+
+#portfolioGameStatus {
+  grid-column: 1 / -1;
+  min-height: 17px;
+  color: #8191a2;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+#portfolioGameStatus[data-state="error"] {
+  color: #ff9b9b;
+}
+
+.portfolio-credit {
+  position: absolute;
+  left: clamp(12px, 2.4vw, 22px);
+  bottom: clamp(10px, 2vw, 18px);
+  z-index: 2;
+  color: rgba(220,232,242,.54);
+  font-size: 10px;
+}
+
+body.emulator-started header {
+  background: var(--surface);
+}
+
+@media (max-width: 720px) {
+  .idle-content {
+    grid-template-columns: 1fr !important;
+  }
+  .idle-psp {
+    display: none;
+  }
+  .idle-title {
+    max-width: 100%;
+  }
+}
