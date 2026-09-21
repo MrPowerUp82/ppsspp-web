@@ -120,6 +120,19 @@ def main() -> None:
         + hook
     )
     runtime = require_replace(runtime, hook, injected, "public/ppsspp-runtime.js")
+
+    # The upstream fast path mounts browser File objects with WORKERFS.
+    # In some Emscripten builds FS.mount(WORKERFS, ...) calls abort(), which is fatal
+    # even when JavaScript catches the thrown exception. For this small portfolio game,
+    # always using the existing MEMFS fallback is safer and fast enough.
+    runtime = require_replace(
+        runtime,
+        "function mountGameFileFast(FS, file, safeName, label) {\n",
+        "function mountGameFileFast(FS, file, safeName, label) {\n"
+        "  // Portfolio build: bypass WORKERFS fast mount; a failed Emscripten abort cannot be recovered safely.\n"
+        "  return null;\n",
+        "public/ppsspp-runtime.js fast game mount",
+    )
     runtime_path.write_text(runtime, encoding="utf-8")
 
     # Brand the installable PWA, while retaining upstream icons and technical shell.

@@ -98,3 +98,14 @@ customization/portfolio.css
 ## Créditos e licença
 
 A build usa `root-hunter/ppsspp-web`, `root-hunter/ppsspp-wasm` e PPSSPP. Os avisos legais do projeto upstream são preservados. Consulte `LICENSE-NOTICE.md`.
+
+
+## Correção para travamento em “Starting PPSSPP…”
+
+Esta versão desativa o caminho rápido de montagem via `WORKERFS` no boot do jogo.
+Em algumas builds do Emscripten, uma falha em `FS.mount(WORKERFS, ...)` chama `abort()`;
+mesmo que o JavaScript capture a exceção e tente cair para MEMFS, o runtime WASM já fica abortado.
+Como o Arcana Survivors é pequeno, o jogo é carregado diretamente em `MEMFS`, evitando esse estado fatal.
+
+Depois de atualizar o repositório, execute novamente o workflow do GitHub Pages.
+Se o navegador ainda estiver usando a build antiga, remova o Service Worker/cache do site e recarregue.
