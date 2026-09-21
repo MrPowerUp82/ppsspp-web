@@ -12,12 +12,55 @@ def require_replace(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+# Exports added to PPSSPP's own sources. Booting a game through argv builds the EmuScreen
+# inside NativeInit(), before the menu/graphics exist, and the WASM core dies with
+# "memory access out of bounds". Booting through the UI (the message the "Load" button
+# posts) works, so expose that path to JavaScript.
+WASM_BOOT_EXPORTS = '''#if defined(__EMSCRIPTEN__)
+// Portfolio patch: boot a game through the regular UI, like the "Load" button does.
+// Callers wait for PPSSPP_IsUIReady(), write the game's VFS path to
+// /tmp/ppsspp-boot-request and then call PPSSPP_BootGame().
+extern "C" EMSCRIPTEN_KEEPALIVE int PPSSPP_IsUIReady() {
+	return g_screenManager != nullptr ? 1 : 0;
+}
+
+extern "C" EMSCRIPTEN_KEEPALIVE int PPSSPP_BootGame() {
+	FILE *f = fopen("/tmp/ppsspp-boot-request", "rb");
+	if (!f) {
+		return 0;
+	}
+	char path[4096];
+	const size_t len = fread(path, 1, sizeof(path) - 1, f);
+	fclose(f);
+	if (len == 0) {
+		return 0;
+	}
+	path[len] = '\\0';
+	System_PostUIMessage(UIMessage::REQUEST_GAME_BOOT, path);
+	return 1;
+}
+#endif
+
+'''
+
+
+def patch_wasm_source(wasm_src: Path) -> None:
+    native_app = wasm_src / "UI" / "NativeApp.cpp"
+    text = native_app.read_text(encoding="utf-8")
+    if "PPSSPP_BootGame" in text:
+        return
+    anchor = "AudioBackend *g_audioBackend = nullptr;\n"
+    text = require_replace(text, anchor, WASM_BOOT_EXPORTS + anchor, "ppsspp-wasm UI/NativeApp.cpp")
+    native_app.write_text(text, encoding="utf-8")
+
+
 def main() -> None:
-    if len(sys.argv) != 3:
-        raise SystemExit("uso: patch_upstream.py <upstream-dir> <custom-dir>")
+    if len(sys.argv) != 4:
+        raise SystemExit("uso: patch_upstream.py <upstream-dir> <custom-dir> <ppsspp-wasm-dir>")
 
     upstream = Path(sys.argv[1]).resolve()
     custom = Path(sys.argv[2]).resolve()
+    patch_wasm_source(Path(sys.argv[3]).resolve())
     cdir = custom / "customization"
     app = upstream / "wasm-page"
     public = app / "public"
@@ -134,23 +177,14 @@ def main() -> None:
         "public/ppsspp-runtime.js fast game mount",
     )
 
-    # Arcana Survivors currently reaches the PPSSPP WASM core but can fault inside a
-    # worker with "memory access out of bounds". Force PPSSPP's plain MIPS interpreter
-    # only for launches coming from the portfolio button, as a compatibility diagnostic.
-    # Visitors who click the normal Start PPSSPP button keep upstream/default behavior.
+    # Start the emulator with no game argument (see WASM_BOOT_EXPORTS). portfolio.js then
+    # boots the game through PPSSPP_BootGame once the menu is up.
     runtime = require_replace(
         runtime,
-        "          Module.arguments.length = 0;\n"
-        "          Module.arguments.push(...emulatorLaunchArgs());\n"
-        "          if (gameArg) Module.arguments.push(gameArg);\n",
-        "          Module.arguments.length = 0;\n"
-        "          Module.arguments.push(...emulatorLaunchArgs());\n"
-        "          if (gameArg && window.__PORTFOLIO_FORCE_INTERPRETER === true) {\n"
-        "            Module.arguments.push(\"-i\");\n"
-        "            log(\"Portfolio compatibility: forcing PPSSPP CPU Interpreter (-i).\", \"warn\");\n"
-        "          }\n"
-        "          if (gameArg) Module.arguments.push(gameArg);\n",
-        "public/ppsspp-runtime.js portfolio interpreter args",
+        "window.portfolioDownloadGame = addGameURLToLibrary;\n",
+        "window.portfolioDownloadGame = addGameURLToLibrary;\n"
+        "window.portfolioStartEmulator = start;\n",
+        "public/ppsspp-runtime.js portfolio start hook",
     )
     runtime_path.write_text(runtime, encoding="utf-8")
 

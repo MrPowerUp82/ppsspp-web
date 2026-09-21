@@ -70,7 +70,7 @@ jobs:
           ls -lh "custom/game/$GAME_FILE"
 
       - name: Apply portfolio customization
-        run: python3 custom/customization/patch_upstream.py upstream custom
+        run: python3 custom/customization/patch_upstream.py upstream custom ppsspp-wasm-src
 
       - name: Build PPSSPP WebAssembly
         working-directory: upstream

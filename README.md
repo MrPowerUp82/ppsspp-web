@@ -111,24 +111,32 @@ Depois de atualizar o repositório, execute novamente o workflow do GitHub Pages
 Se o navegador ainda estiver usando a build antiga, remova o Service Worker/cache do site e recarregue.
 
 
-## Teste de compatibilidade v2: CPU Interpreter
+## Boot do jogo: `PPSSPP_BootGame`
 
-O log mais recente mostra que o jogo já é carregado em MEMFS, o runtime do PPSSPP
-é inicializado e o boot chega ao núcleo `PPSSPP 1.20.4-wasm`, mas o worker WASM
-termina com `RuntimeError: memory access out of bounds`.
+O botão **Jogar agora** antes passava o jogo como argumento de linha de comando do PPSSPP
+(`PPSSPP arguments: ["/games/arcana-survivors-v0.6.0-psp.cso"]`). Esse boot cai no núcleo
+WASM com `RuntimeError: memory access out of bounds`, logo depois de carregar o ELF. O
+mesmo acontece no projeto original (`root-hunter/ppsspp-web`), então não é um problema do
+`.cso`: o CPU Interpreter (`-i`) foi testado e não muda nada, e abrir o mesmo jogo pelo
+menu do PPSSPP funciona.
 
-Para isolar um possível problema no caminho de execução IR/JIT da build WebAssembly,
-esta variante adiciona `-i` aos argumentos do PPSSPP **somente** quando Arcana Survivors
-é iniciado pelo botão do portfólio. O botão normal **Start PPSSPP** permanece sem essa
-forçagem, portanto visitantes ainda podem usar o emulador normalmente com seus próprios jogos.
+Com o argumento, o `EmuScreen` é criado dentro do `NativeInit()`, antes de o menu existir.
+Pelo menu, a troca de tela acontece com o laço principal já rodando. A causa exata dentro
+do núcleo não foi identificada; o build não tem nomes de função.
 
-No console, um boot do Arcana nesta variante deve mostrar algo semelhante a:
+Por isso `customization/patch_upstream.py` faz duas coisas:
 
-```text
-Portfolio compatibility: forcing PPSSPP CPU Interpreter (-i).
-PPSSPP arguments: ["-i","/games/arcana-survivors-v0.6.0-psp.cso"]
+1. Adiciona ao `ppsspp-wasm` (`UI/NativeApp.cpp`) duas funções exportadas:
+   `PPSSPP_IsUIReady()` e `PPSSPP_BootGame()`. A segunda posta a mesma mensagem
+   `REQUEST_GAME_BOOT` que o botão "Load" do menu.
+2. Expõe `start()` como `window.portfolioStartEmulator`.
+
+O `portfolio.js` sobe o emulador sem jogo, espera o menu, monta o `.cso` em `/games`,
+grava o caminho em `/tmp/ppsspp-boot-request` e chama `Module._PPSSPP_BootGame()`.
+
+O botão genérico **Start PPSSPP** do upstream fica escondido nesta página
+(`customization/portfolio.css`). Para abrir o emulador ocioso pelo console:
+
+```js
+document.getElementById('idleStartBtn').click()
 ```
-
-Se ainda ocorrer `memory access out of bounds`, o próximo passo é testar o `EBOOT.PBP`
-diretamente e/ou gerar uma build WASM de diagnóstico com símbolos/assertions para localizar
-o endereço do crash dentro do PPSSPP.
