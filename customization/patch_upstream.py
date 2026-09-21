@@ -65,6 +65,17 @@ def patch_wasm_source(wasm_src: Path) -> None:
         )
         cmake_lists.write_text(cmake, encoding="utf-8")
 
+    # The release build links mimalloc, which traps with "memory access out of bounds"
+    # inside its own page allocator (attempt_allocate <- __mmap <- AllocateMemoryPages)
+    # when the emulator thread initializes the GPU on game boot. Use dlmalloc instead.
+    makefile = wasm_src / "Makefile"
+    make = makefile.read_text(encoding="utf-8")
+    if "-DWASM_MALLOC=mimalloc" in make:
+        make = make.replace("-DWASM_MALLOC=mimalloc", "-DWASM_MALLOC=dlmalloc")
+        makefile.write_text(make, encoding="utf-8")
+    elif "-DWASM_MALLOC=dlmalloc" not in make:
+        raise RuntimeError("Upstream mudou: não encontrei -DWASM_MALLOC=mimalloc no Makefile do ppsspp-wasm")
+
 
 def main() -> None:
     if len(sys.argv) != 4:
@@ -197,16 +208,6 @@ def main() -> None:
         "window.portfolioDownloadGame = addGameURLToLibrary;\n"
         "window.portfolioStartEmulator = start;\n",
         "public/ppsspp-runtime.js portfolio start hook",
-    )
-    # Fast memory turns PSP loads/stores into raw pointer math and relies on a fault handler
-    # to recover from bad accesses. WASM has no such handler ("Exception handler not
-    # implemented on this platform"), so a bad access traps as "memory access out of bounds"
-    # right after the game boots. Use the checked slow path instead.
-    runtime = require_replace(
-        runtime,
-        '["CPU", "FastMemoryAccess", "True"],',
-        '["CPU", "FastMemoryAccess", "False"],',
-        "public/ppsspp-runtime.js FastMemoryAccess",
     )
     runtime_path.write_text(runtime, encoding="utf-8")
 

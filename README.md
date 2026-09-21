@@ -111,20 +111,25 @@ Depois de atualizar o repositório, execute novamente o workflow do GitHub Pages
 Se o navegador ainda estiver usando a build antiga, remova o Service Worker/cache do site e recarregue.
 
 
+## Crash no boot: `memory access out of bounds` (mimalloc)
+
+Ao iniciar o jogo, o núcleo WASM caía com `RuntimeError: memory access out of bounds`
+logo depois de carregar o ELF, tanto pelo botão **Jogar agora** quanto pelo menu do PPSSPP.
+Com os nomes de função no `.wasm` (`--profiling-funcs`), o trace mostrou a causa:
+
+```text
+attempt_allocate <- mi_os_prim_alloc <- ... <- mi_malloc_aligned <- __mmap
+  <- AllocateMemoryPages <- DrawEngineCommon() <- GPU_GLES() <- GPU_Init <- PSP_InitStart
+```
+
+O erro acontece dentro do alocador **mimalloc**, que a build release do `ppsspp-wasm`
+liga com `-DWASM_MALLOC=mimalloc`, quando a thread do emulador inicializa a GPU. Não é um
+problema do `.cso` nem do jeito de dar boot. `customization/patch_upstream.py` troca o
+alocador para `dlmalloc` e mantém `--profiling-funcs` para que futuros crashes venham com nomes.
+
 ## Boot do jogo: `PPSSPP_BootGame`
 
-O botão **Jogar agora** antes passava o jogo como argumento de linha de comando do PPSSPP
-(`PPSSPP arguments: ["/games/arcana-survivors-v0.6.0-psp.cso"]`). Esse boot cai no núcleo
-WASM com `RuntimeError: memory access out of bounds`, logo depois de carregar o ELF. O
-mesmo acontece no projeto original (`root-hunter/ppsspp-web`), então não é um problema do
-`.cso`: o CPU Interpreter (`-i`) foi testado e não muda nada, e abrir o mesmo jogo pelo
-menu do PPSSPP funciona.
-
-Com o argumento, o `EmuScreen` é criado dentro do `NativeInit()`, antes de o menu existir.
-Pelo menu, a troca de tela acontece com o laço principal já rodando. A causa exata dentro
-do núcleo não foi identificada; o build não tem nomes de função.
-
-Por isso `customization/patch_upstream.py` faz duas coisas:
+`customization/patch_upstream.py` também:
 
 1. Adiciona ao `ppsspp-wasm` (`UI/NativeApp.cpp`) duas funções exportadas:
    `PPSSPP_IsUIReady()` e `PPSSPP_BootGame()`. A segunda posta a mesma mensagem
