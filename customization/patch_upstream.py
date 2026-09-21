@@ -154,6 +154,21 @@ def main() -> None:
     )
     runtime_path.write_text(runtime, encoding="utf-8")
 
+    # The upstream service worker serves every *.js cache-first under a fixed cache name,
+    # so a redeploy of portfolio.js/portfolio-config.js never reaches returning visitors.
+    # Treat them like the app shell (network-first, cache only as offline fallback).
+    sw_path = public / "sw.js"
+    sw = sw_path.read_text(encoding="utf-8")
+    sw = require_replace(
+        sw,
+        '                  pathname.endsWith("/ppsspp-runtime.js");',
+        '                  pathname.endsWith("/ppsspp-runtime.js") ||\n'
+        '                  pathname.endsWith("/portfolio.js") ||\n'
+        '                  pathname.endsWith("/portfolio-config.js");',
+        "public/sw.js app shell match",
+    )
+    sw_path.write_text(sw, encoding="utf-8")
+
     # Brand the installable PWA, while retaining upstream icons and technical shell.
     manifest_path = public / "manifest.webmanifest"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
