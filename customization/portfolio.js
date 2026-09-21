@@ -115,6 +115,9 @@
 
     button.addEventListener("click", async () => {
       if (button.dataset.state === "ready") {
+        // Diagnostic/stability option for this portfolio game only.
+        // The generic "Start PPSSPP" path remains untouched.
+        window.__PORTFOLIO_FORCE_INTERPRETER = cfg.forceInterpreter === true;
         window.playOrMountStoredGame(cfg.fileName || "EBOOT.PBP");
         return;
       }

@@ -109,3 +109,26 @@ Como o Arcana Survivors é pequeno, o jogo é carregado diretamente em `MEMFS`, 
 
 Depois de atualizar o repositório, execute novamente o workflow do GitHub Pages.
 Se o navegador ainda estiver usando a build antiga, remova o Service Worker/cache do site e recarregue.
+
+
+## Teste de compatibilidade v2: CPU Interpreter
+
+O log mais recente mostra que o jogo já é carregado em MEMFS, o runtime do PPSSPP
+é inicializado e o boot chega ao núcleo `PPSSPP 1.20.4-wasm`, mas o worker WASM
+termina com `RuntimeError: memory access out of bounds`.
+
+Para isolar um possível problema no caminho de execução IR/JIT da build WebAssembly,
+esta variante adiciona `-i` aos argumentos do PPSSPP **somente** quando Arcana Survivors
+é iniciado pelo botão do portfólio. O botão normal **Start PPSSPP** permanece sem essa
+forçagem, portanto visitantes ainda podem usar o emulador normalmente com seus próprios jogos.
+
+No console, um boot do Arcana nesta variante deve mostrar algo semelhante a:
+
+```text
+Portfolio compatibility: forcing PPSSPP CPU Interpreter (-i).
+PPSSPP arguments: ["-i","/games/arcana-survivors-v0.6.0-psp.cso"]
+```
+
+Se ainda ocorrer `memory access out of bounds`, o próximo passo é testar o `EBOOT.PBP`
+diretamente e/ou gerar uma build WASM de diagnóstico com símbolos/assertions para localizar
+o endereço do crash dentro do PPSSPP.

@@ -133,6 +133,25 @@ def main() -> None:
         "  return null;\n",
         "public/ppsspp-runtime.js fast game mount",
     )
+
+    # Arcana Survivors currently reaches the PPSSPP WASM core but can fault inside a
+    # worker with "memory access out of bounds". Force PPSSPP's plain MIPS interpreter
+    # only for launches coming from the portfolio button, as a compatibility diagnostic.
+    # Visitors who click the normal Start PPSSPP button keep upstream/default behavior.
+    runtime = require_replace(
+        runtime,
+        "          Module.arguments.length = 0;\n"
+        "          Module.arguments.push(...emulatorLaunchArgs());\n"
+        "          if (gameArg) Module.arguments.push(gameArg);\n",
+        "          Module.arguments.length = 0;\n"
+        "          Module.arguments.push(...emulatorLaunchArgs());\n"
+        "          if (gameArg && window.__PORTFOLIO_FORCE_INTERPRETER === true) {\n"
+        "            Module.arguments.push(\"-i\");\n"
+        "            log(\"Portfolio compatibility: forcing PPSSPP CPU Interpreter (-i).\", \"warn\");\n"
+        "          }\n"
+        "          if (gameArg) Module.arguments.push(gameArg);\n",
+        "public/ppsspp-runtime.js portfolio interpreter args",
+    )
     runtime_path.write_text(runtime, encoding="utf-8")
 
     # Brand the installable PWA, while retaining upstream icons and technical shell.
