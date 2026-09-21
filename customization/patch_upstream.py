@@ -186,6 +186,16 @@ def main() -> None:
         "window.portfolioStartEmulator = start;\n",
         "public/ppsspp-runtime.js portfolio start hook",
     )
+    # Fast memory turns PSP loads/stores into raw pointer math and relies on a fault handler
+    # to recover from bad accesses. WASM has no such handler ("Exception handler not
+    # implemented on this platform"), so a bad access traps as "memory access out of bounds"
+    # right after the game boots. Use the checked slow path instead.
+    runtime = require_replace(
+        runtime,
+        '["CPU", "FastMemoryAccess", "True"],',
+        '["CPU", "FastMemoryAccess", "False"],',
+        "public/ppsspp-runtime.js FastMemoryAccess",
+    )
     runtime_path.write_text(runtime, encoding="utf-8")
 
     # The upstream service worker serves every *.js cache-first under a fixed cache name,
