@@ -81,6 +81,23 @@ fileName: "arcana-survivors-vX.Y.Z-psp.cso",
 gameUrl: "game/arcana-survivors-vX.Y.Z-psp.cso",
 ```
 
+## Testar localmente (Docker)
+
+`local/` reproduz o workflow do GitHub Pages num container `emscripten/emsdk:5.0.7`, sem
+precisar publicar para testar:
+
+```bash
+docker compose -f local/docker-compose.yml run --rm build
+docker compose -f local/docker-compose.yml up serve
+```
+
+Depois abra `http://localhost:8080`. Os fontes do upstream, o build do Emscripten e o
+`node_modules` ficam no volume Docker `arcana-psp-local_work`, então só o primeiro build é
+demorado; os seguintes recompilam só o que mudou. O servidor manda os headers COOP/COEP
+e `Cache-Control: no-store`, então basta recarregar a página depois de cada build.
+
+Para começar do zero: `docker volume rm arcana-psp-local_work`.
+
 ## Personalização
 
 Os textos principais ficam em:

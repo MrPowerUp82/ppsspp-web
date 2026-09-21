@@ -1,0 +1,27 @@
+# Local build + preview of the GitHub Pages bundle.
+#   docker compose -f local/docker-compose.yml run --rm build
+#   docker compose -f local/docker-compose.yml up serve      -> http://localhost:8080
+name: arcana-psp-local
+
+services:
+  build:
+    build: .
+    image: arcana-psp-local-build
+    volumes:
+      - ..:/src:ro
+      - work:/work
+    command: ["bash", "/src/local/build.sh"]
+
+  serve:
+    image: arcana-psp-local-build
+    volumes:
+      - ..:/src:ro
+      - work:/work:ro
+    ports:
+      - "8080:8080"
+    command: ["python3", "/src/local/serve.py", "/work/upstream/wasm-page/dist/ppsspp-web"]
+
+# Sources, emscripten objects and node_modules live here so rebuilds are incremental
+# and nothing heavy lands in the (OneDrive-synced) repo folder.
+volumes:
+  work:
