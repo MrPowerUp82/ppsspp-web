@@ -6,10 +6,10 @@ window.PORTFOLIO_GAME = {
 
   projectUrl: "https://github.com/MrPowerUp82/wizard-coop-ports",
 
-  // O GitHub Actions baixa este arquivo da release v0.6.0 e o publica
+  // O GitHub Actions baixa este arquivo da release v0.9.0 e o publica
   // junto do site para o navegador carregá-lo pela mesma origem.
-  fileName: "arcana-survivors-v0.8.0-psp.cso",
-  gameUrl: "game/arcana-survivors-v0.8.0-psp.cso",
+  fileName: "arcana-survivors-v0.9.0-psp.cso",
+  gameUrl: "game/arcana-survivors-v0.9.0-psp.cso",
 
   // Mantém o download sob ação explícita do visitante.
   autoPrepare: false,

@@ -4,11 +4,11 @@ Você não precisa commitar o `.cso` neste repositório.
 
 Durante o deploy, `.github/workflows/pages.yml` baixa automaticamente:
 
-`arcana-survivors-v0.8.0-psp.cso`
+`arcana-survivors-v0.9.0-psp.cso`
 
 Da release oficial:
 
-`https://github.com/MrPowerUp82/wizard-coop-ports/releases/tag/v0.8.0`
+`https://github.com/MrPowerUp82/wizard-coop-ports/releases/tag/v0.9.0`
 
 O workflow confere o SHA-256 antes de incluir o arquivo no site:
 
