@@ -15,9 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GAME_FILE: arcana-survivors-v0.9.2-psp.cso
-  GAME_URL: https://github.com/MrPowerUp82/wizard-coop-ports/releases/download/v0.9.2/arcana-survivors-v0.9.2-psp.cso
-  GAME_SHA256: 58f5d22f8b8e8788b0c163c1b008421f54e8288b8a7abb56bc13ad97da96e681
+  GAME_FILE: arcana-survivors-v0.9.3-psp.cso
+  GAME_URL: https://github.com/MrPowerUp82/wizard-coop-ports/releases/download/v0.9.3/arcana-survivors-v0.9.3-psp.cso
+  GAME_SHA256: 815307332646d835533734aabdea96d89630eda396c184b8f5a25690da1f27fd
 
 jobs:
   build:

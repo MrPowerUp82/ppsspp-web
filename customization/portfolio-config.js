@@ -8,8 +8,8 @@ window.PORTFOLIO_GAME = {
 
   // O GitHub Actions baixa este arquivo da release v0.9.0 e o publica
   // junto do site para o navegador carregá-lo pela mesma origem.
-  fileName: "arcana-survivors-v0.9.2-psp.cso",
-  gameUrl: "game/arcana-survivors-v0.9.2-psp.cso",
+  fileName: "arcana-survivors-v0.9.3-psp.cso",
+  gameUrl: "game/arcana-survivors-v0.9.3-psp.cso",
 
   // Mantém o download sob ação explícita do visitante.
   autoPrepare: false,

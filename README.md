@@ -7,9 +7,9 @@ Página de portfólio para executar a versão PSP de **Arcana Survivors** direta
 Este template aponta para a release:
 
 - Jogo: `Arcana Survivors`
-- PSP: `arcana-survivors-v0.9.2-psp.cso`
-- Release: `https://github.com/MrPowerUp82/wizard-coop-ports/releases/tag/v0.9.2`
-- SHA-256: `58f5d22f8b8e8788b0c163c1b008421f54e8288b8a7abb56bc13ad97da96e681`
+- PSP: `arcana-survivors-v0.9.3-psp.cso`
+- Release: `https://github.com/MrPowerUp82/wizard-coop-ports/releases/tag/v0.9.3`
+- SHA-256: `815307332646d835533734aabdea96d89630eda396c184b8f5a25690da1f27fd`
 
 O `.cso` **não precisa ser commitado** neste repositório. O GitHub Actions baixa o arquivo da release, confere o SHA-256 e o coloca dentro do bundle publicado no GitHub Pages.
 
@@ -44,7 +44,7 @@ checkout
   ↓
 baixa PPSSPP Web/WASM
   ↓
-baixa arcana-survivors-v0.9.2-psp.cso
+baixa arcana-survivors-v0.9.3-psp.cso
   ↓
 confere SHA-256
   ↓
